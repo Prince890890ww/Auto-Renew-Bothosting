@@ -2,29 +2,34 @@ name: Auto Renew Bot-hosting
 
 on:
   schedule:
-    - cron: '30 22 * * *' # 每天UTC 1点 (北京时间9点, 一般都会推迟),自行根据服务到期时间调整
+    - cron: '30 22 * * *'
   workflow_dispatch:
 
 jobs:
   Renew-bot:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     permissions:
+      contents: write
       actions: write
-      contents: read
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: ⚙ 设置 Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: 🛠️ 安装系统依赖和 Python 依赖
+      # System dependencies (apt-get) hata kar direct Chrome install kar rahe hain
+      - name: ⚙️ Setup Chrome Browser
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: 🛠️ Install Python Dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb x11-utils xdotool scrot fonts-noto-cjk jq wget
           pip install seleniumbase requests
+          # SeleniumBase ko batayein ki system Chrome use kare
           seleniumbase install chromedriver
 
       - name: ⚙ 设置代理 (sing-box)
@@ -37,10 +42,14 @@ jobs:
       - name: 🚀 运行续期脚本
         env:
           EMAIL: ${{ secrets.EMAIL }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           PASSWORD: ${{ secrets.PASSWORD }}
+          SESSION_TOKEN: ${{ secrets.SESSION_TOKEN }}
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
+          # System Chrome use karne ke liye environment variable set karein
+          export LOCAL_CHROME=true
           xvfb-run --auto-servernum python3 app.py
 
       - name: 🧽 清理进程和临时文件
@@ -51,6 +60,19 @@ jobs:
           pkill -f chrome || true
           pkill -f Xvfb || true
           rm -f sing-box sing-box-config.json sing-box.log
+
+      - name: 🕒 更新运行时间
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          echo "$(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M:%S')" > time.txt
+          git add time.txt
+          if git diff --cached --quiet; then
+            echo "No need to commit"
+          else
+            git commit -m "⏱️ Auto Update by Github Actions $(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M:%S')"
+            git push origin main
+          fi
 
       - name: 🧹 清理旧的工作流运行记录
         if: always()
