@@ -13,20 +13,20 @@ TG_BOT_TOKEN  = os.environ.get("TG_BOT_TOKEN") or ""    # TG bot token
 BASE_URL = "https://bot-hosting.net"
 
 if not (EMAIL and PASSWORD):
-    print("ℹ️ 未配置 EMAIL 和 PASSWORD,脚本终止。")
+    print("ℹ️ Email aur Password nahi dala gaya, script ruk rahi hai.")
     sys.exit(1)
 
 # 发送tg通知
 def send_telegram_message(message: str):
     if not TG_BOT_TOKEN or not TG_CHAT_ID:
-        print("⚠️Telegram 未配置，跳过通知")
+        print("⚠️ Telegram set nahi hai, notification skip kar rahe hain")
         return
     url = f"https://api.telegram.org/bot{TG_BOT_TOKEN}/sendMessage"
     try:
         requests.post(url, json={"chat_id": TG_CHAT_ID, "text": message}, timeout=10)
-        print("✅ Telegram 通知已发送")
+        print("✅ Telegram notification bhej di gayi hai")
     except Exception as e:
-        print(f"❌ Telegram 发送失败: {e}")
+        print(f"❌ Telegram message fail hua: {e}")
 
 # 通知格式
 def format_notification(status: str, extra: str = "", error: str = "", expiry_date: str = "") -> str:
@@ -42,18 +42,18 @@ def format_notification(status: str, extra: str = "", error: str = "", expiry_da
         masked_email = EMAIL[:2] + '****' 
     
     lines = [
-        "🇫🇮 Bot-hosting 续期通知",
+        "🇫🇮 Bot-hosting Renewal Update",
         "",
         f"{status}",
-        f"👤 登录账户: {masked_email}",
+        f"👤 Account: {masked_email}",
     ]
     if expiry_date:
-        lines.append(f"📅 到期时间: {expiry_date}")
+        lines.append(f"📅 Expiry Date: {expiry_date}")
     if extra:
         lines.append(extra)
     if error:
-        lines.append(f"⚠️ 错误信息: {error}")
-    lines.append(f"⏱️ 登录时间: {now}")
+        lines.append(f"⚠️ Error: {error}")
+    lines.append(f"⏱️ Time: {now}")
     return "\n".join(lines)
 
 # ---------- 基础工具 ----------
@@ -211,7 +211,7 @@ def _click_turnstile(sb, locate_timeout=10) -> bool:
             break
         time.sleep(1)
     if not coords:
-        print("⚠️ 无法定位 Turnstile 坐标, 打印现场诊断:")
+        print("⚠️ Turnstile nahi mila, diagnostics print kar rahe hain:")
         diag_turnstile_dom(sb, errors)
         return False
 
@@ -223,12 +223,12 @@ def _click_turnstile(sb, locate_timeout=10) -> bool:
         bar = int(parts[2] or 800) - int(parts[3] or 768)
         ax = int(coords["cx"]) + sx
         ay = int(coords["cy"]) + sy + bar
-        print(f"🖱️ 底层点击 Turnstile ({ax}, {ay})")
+        print(f"🖱️ Turnstile par click kar rahe hain ({ax}, {ay})")
         _xdotool_click(ax, ay)
         time.sleep(3)
         return True
     except Exception as e:
-        print(f"⚠️ 底层点击失败: {e}")
+        print(f"⚠️ Click fail hua: {e}")
         return False
 
 def click_turnstile(sb) -> bool:
@@ -238,19 +238,19 @@ def click_turnstile(sb) -> bool:
     if coords:
         try:
             if hasattr(sb, "cdp") and hasattr(sb.cdp, "gui_click_x_y"):
-                print(f"🖱️ 坐标点击 Turnstile ({coords['cx']},{coords['cy']})")
+                print(f"🖱️ Coordinates se click kar rahe hain ({coords['cx']},{coords['cy']})")
                 sb.cdp.gui_click_x_y(int(coords["cx"]), int(coords["cy"]))
                 return True
         except Exception as e:
-            print(f"⚠️ 坐标点击失败: {e}")
+            print(f"⚠️ Coordinate click fail hua: {e}")
     try:
         if hasattr(sb, "cdp") and hasattr(sb.cdp, "click_captcha"):
-            print("🖱️ 兜底调用cdp点击 ...")
+            print("🖱️ Fallback CDP click...")
             sb.cdp.click_captcha()
             return True
-        print("⚠️ 当前 SeleniumBase 版本无 sb.cdp.click_captcha")
+        print("⚠️ SeleniumBase version mein click_captcha nahi hai")
     except Exception as e:
-        print(f"⚠️ click_captcha 出错: {e}")
+        print(f"⚠️ click_captcha error: {e}")
     return False
 
 def solve_turnstile(sb, timeout=90, tag="Turnstile", first_wait=8) -> bool:
@@ -262,20 +262,20 @@ def solve_turnstile(sb, timeout=90, tag="Turnstile", first_wait=8) -> bool:
     clicks = 0
     while time.time() < deadline:
         if turnstile_token(sb):
-            print(f"✅ {tag}已通过(已获取 token)")
+            print(f"✅ {tag} pass ho gaya (Token mil gaya)")
             return True
         if time.time() >= next_click:
             clicks += 1
-            print(f"🖱️ 第 {clicks} 次点击 Turnstile 验证框...")
+            print(f"🖱️ Turnstile par {clicks} baar click kar rahe hain...")
             click_turnstile(sb)
             next_click = time.time() + 10 + random.uniform(0, 3)
         time.sleep(2)
     ok = bool(turnstile_token(sb))
-    print(f"{'✅' if ok else '❌'} {tag}{'已通过' if ok else '未通过'}")
+    print(f"{'✅' if ok else '❌'} {tag}{' pass ho gaya' if ok else ' fail ho gaya'}")
     return ok
 
 def handle_turnstile(sb) -> bool:
-    print("🛡️ 处理 Turnstile 验证...")
+    print("🛡️ Turnstile verify kar rahe hain...")
     return solve_turnstile(sb, timeout=90, tag="Turnstile", first_wait=8)
     
 # 获取当前出口ip
@@ -294,9 +294,9 @@ def format_countdown(countdown_str: str) -> str:
         h = int(h)
         m = int(m)
         if h > 0:
-            return f"{h}h{m}min"
+            return f"{h} hours {m} mins"
         else:
-            return f"{m}min"
+            return f"{m} mins"
     except:
         return countdown_str
 
@@ -339,7 +339,7 @@ def get_expiry_from_dom(sb) -> str:
 # 主流程
 def main():
     print("#" * 25)
-    print("   Bot-hosting 自动续期")
+    print("   Bot-hosting Auto Renew")
     print("#" * 25)
 
     IS_PROXY = os.environ.get("IS_PROXY", "false").lower() == "true"
@@ -349,51 +349,50 @@ def main():
     sb_kwargs = {"uc": True, "headless": HEADLESS, "locale_code": "en-US"}
 
     if IS_PROXY:
-        print(f"🔗 挂载代理: {PROXY_SERVER}")
+        print(f"🔗 Proxy use kar rahe hain: {PROXY_SERVER}")
         sb_kwargs["proxy"] = PROXY_SERVER
     else:
-        print("🍭 未使用代理，直连访问")
+        print("🍭 Bina proxy ke direct connect ho rahe hain")
 
     with SB(**sb_kwargs) as sb:
         try:
             ip = get_current_ip(PROXY_SERVER if IS_PROXY else "")
-            print(f"📍 当前出口IP: {ip}")
+            print(f"📍 Current IP: {ip}")
         except Exception as e:
-            print(f"⚠️ 获取出口 IP 失败: {e}")
+            print(f"⚠️ IP check fail hua: {e}")
 
         login_ok = False
 
-        # 账号密码登录（密码不过期，唯一登录方式；整段兜异常，失败只标记 login_ok=False 走统一失败通知）
+        # 账号密码登录
         if EMAIL and PASSWORD:
-            print("🚀 启动浏览器...")
+            print("🚀 Browser start kar rahe hain...")
             try:
-                print(f"🌐 访问 {BASE_URL}/login")
+                print(f"🌐 Open {BASE_URL}/login")
                 sb.open(f"{BASE_URL}/login")
                 sb.wait_for_ready_state_complete()
                 sb.sleep(3)
                 sb.click('button[type="submit"]') # 点击 Continue with email 按钮
                 sb.sleep(12)  # 等待页面加载
-                print(f"📧 填写邮箱...")
+                print(f"📧 Email fill kar rahe hain...")
                 sb.input('input[type="email"]', EMAIL)
                 sb.sleep(1)
-                print(f"🔑 填写密码...")
+                print(f"🔑 Password fill kar rahe hain...")
                 sb.input('input[type="password"]', PASSWORD)
                 sb.sleep(3)
 
                 if wait_turnstile_present(sb):
                     if not handle_turnstile(sb):
-                        print("❌ 登录界面的 Turnstile 验证失败，尝试兜底点击...")
+                        print("❌ Login page ka Turnstile fail hua, dobara try kar rahe hain...")
                         try:
                             sb.cdp.click_captcha()  # 再次尝试点击 Turnstile 验证
                             sb.sleep(4)
                         except Exception as e:
-                            print(f"⚠️ 兜底点击失败: {e}")
-                        # sb.save_screenshot("turnstile_failed.png")
+                            print(f"⚠️ Dobara click fail hua: {e}")
                 else:
-                    print("ℹ️ 未检测到 Turnstile")
+                    print("ℹ️ Turnstile nahi mila")
                 sb.sleep(1)
                 sb.click('button[type="submit"]') # 点击登录按钮
-                print("🖱️ 提交登录按钮")
+                print("🖱️ Login button click kar rahe hain")
                 sb.sleep(6)  # 等待页面加载
                 sb.wait_for_ready_state_complete()
                 sb.open(f"{BASE_URL}/a/billings")
@@ -401,18 +400,18 @@ def main():
                 sb.sleep(3)
                 current_url = sb.get_current_url()
                 current_title = sb.get_title()
-                print(f"📝 当前URL: {current_url}, Title: {current_title}")
+                print(f"📝 Current URL: {current_url}, Title: {current_title}")
 
                 if "/a/billings" in current_url and "/login" not in current_url and "error=" not in current_url:
                     login_ok = True
-                    print("✅ Password 登录成功,当前已到达账单页")
+                    print("✅ Password se login successful, billing page par pahunch gaye")
                 else:
-                    print(f"❌ Password 登录后仍未到达账单页，当前URL: {current_url}")
+                    print(f"❌ Login ke baad billing page nahi mila, Current URL: {current_url}")
             except Exception as e:
-                    print(f"❌ Password 登录过程异常: {type(e).__name__}: {str(e)[:150]}")
+                    print(f"❌ Login process mein error: {type(e).__name__}: {str(e)[:150]}")
 
         if not login_ok:
-            send_telegram_message(format_notification("❌ 登录失败", error="Password 登录失败"))
+            send_telegram_message(format_notification("❌ Login Fail", error="Password galat hai ya Turnstile block hua"))
             return
 
         # 提取当前到期日期
@@ -423,9 +422,9 @@ def main():
             page_source = sb.get_page_source()
         current_expiry = get_expiry_from_dom(sb) or extract_expiry_date(page_source)
         if current_expiry:
-            print(f"📅 当前到期日期: {current_expiry}")
+            print(f"📅 Current Expiry Date: {current_expiry}")
         else:
-            print("⚠️ 未能提取当前到期日期")
+            print("⚠️ Expiry date nahi mil payi")
 
         # 寻找外部续期按钮
         outer_renew_selector = None
@@ -442,29 +441,28 @@ def main():
             try:
                 if sb.is_element_visible(selector):
                     button_text = sb.get_text(selector)
-                    # "Renew in HH:MM:SS" / "Renewal cooldown HH:MM:SS" 都表示冷却中, 时间为距可续期的剩余时长
                     match = re.search(r"(?:Renew in|Renewal cooldown)\s+(\d{1,2}:\d{2}:\d{2})", button_text, re.I)
                     if match:
                         countdown_text = match.group(1)
-                        print(f"⏳ 续期冷却中, 未到续期时间: '{button_text}'")
+                        print(f"⏳ Cooldown chal raha hai, abhi renew nahi ho sakta: '{button_text}'")
                         break
                     elif "Renew" in button_text:
                         outer_renew_selector = selector
-                        print(f"✅ 续期按钮可用: '{button_text}'")
+                        print(f"✅ Renew button available hai: '{button_text}'")
                         break
             except Exception as e:
                 pass
 
         # 点击外部续期按钮等待弹窗
         if outer_renew_selector:
-            print("🔄 点击外部续期按钮，等待验证窗口...")
+            print("🔄 Renew button click kar rahe hain, popup ka wait...")
             try:
                 sb.sleep(2)
                 sb.click(outer_renew_selector)
                 sb.sleep(15)  # 等待模态框加载，可能因网络因素加载慢
             except Exception as e:
-                print(f"❌ 点击外部按钮失败: {e}")
-                send_telegram_message(format_notification("❌ 续期失败", error="点击外部续期按钮出错"))
+                print(f"❌ Renew button click fail hua: {e}")
+                send_telegram_message(format_notification("❌ Renewal Fail", error="Renew button click karne me error aaya"))
                 return
 
             # 处理弹窗中的 Turnstile
@@ -472,24 +470,23 @@ def main():
             if wait_turnstile_present(sb):
                 turnstile_passed = handle_turnstile(sb)
                 if not turnstile_passed:
-                    print("❌ Turnstile 验证失败，尝试兜底点击...")
+                    print("❌ Popup Turnstile fail hua, dobara try kar rahe hain...")
                     try:
                         sb.cdp.click_captcha()  # 再次尝试点击 Turnstile 验证
                         sb.sleep(4)
                         turnstile_passed = bool(turnstile_token(sb))
                     except Exception as e:
-                        print(f"⚠️ 兜底点击失败: {e}")
-                    # sb.save_screenshot("turnstile_failed.png")
+                        print(f"⚠️ Dobara click fail hua: {e}")
             else:
-                print("ℹ️ 未检测到 Turnstile")
+                print("ℹ️ Popup mein Turnstile nahi mila")
 
             if not turnstile_passed:
-                print("❌ Turnstile 验证最终未通过，脚本退出")
-                send_telegram_message(format_notification("❌ 续期失败", error="Turnstile 验证未通过"))
+                print("❌ Turnstile verify nahi hua, script ruk rahi hai")
+                send_telegram_message(format_notification("❌ Renewal Fail", error="Turnstile (Captcha) verify nahi hua"))
                 return
 
             # 点击续期按钮
-            print("⏳ 等待续期按钮可用并点击...")
+            print("⏳ Renew button ka wait kar rahe hain aur click kar rahe hain...")
             time.sleep(5) 
 
             modal_button_clicked = False
@@ -497,11 +494,11 @@ def main():
                 selector = 'div[role="dialog"] button.btn-primary' 
                 sb.click(selector, timeout=8)
                 modal_button_clicked = True
-                print("✅ 已点击续期按钮")
+                print("✅ Renew button click ho gaya")
             except Exception as e:
-                print(f"续期按钮点击失败: {e}")
+                print(f"Renew button click fail hua: {e}")
 
-            print("⏳ 等待新的过期时间...")
+            print("⏳ Naye expiry date ka wait...")
             sb.sleep(6)
 
             # 提取新的到期日期和倒计时
@@ -513,58 +510,58 @@ def main():
             new_match = re.search(r"(?:Renewal cooldown|Renew in)\s+(\d{1,2}:\d{2}:\d{2})", new_page_text)
             if new_match:
                 new_countdown = new_match.group(1)
-                print(f"✅ 续期成功！新的倒计时: {new_countdown}")
+                print(f"✅ Renew successful! Naya cooldown: {new_countdown}")
                 if new_expiry:
-                    print(f"📅 新的到期日期: {new_expiry}")
+                    print(f"📅 Nayi Expiry Date: {new_expiry}")
                 send_telegram_message(
                     format_notification(
-                        "✅ 续期成功",
-                        extra=f"⏱️ 可续期时间: {format_countdown(new_countdown)}后",
-                        expiry_date=new_expiry or "（未获取到）"
+                        "✅ Renewal Successful! Account renew ho gaya.",
+                        extra=f"⏱️ Next Renewal: {format_countdown(new_countdown)} baad",
+                        expiry_date=new_expiry or "(Nahi mila)"
                     )
                 )
             else:
                 if new_expiry and new_expiry != current_expiry:
-                    print(f"✅ 续期成功，到期日期已更新为: {new_expiry}")
+                    print(f"✅ Renewal successful, expiry date update ho gayi: {new_expiry}")
                     send_telegram_message(
                         format_notification(
-                            "✅ 续期成功",
-                            extra="到期日期已更新",
+                            "✅ Renewal Successful! Account renew ho gaya.",
+                            extra="Expiry date update ho gayi hai",
                             expiry_date=new_expiry
                         )
                     )
                 else:
-                    print("⚠️ 续期结果未知，到期日期未变化，请手动检查")
+                    print("⚠️ Renewal ka pata nahi chala, expiry date same hai, manually check karein")
                     send_telegram_message(
                         format_notification(
-                            "⚠️ 续期可能未成功",
-                            extra="请登录后台检查",
-                            expiry_date=current_expiry or "（未获取到）"
+                            "⚠️ Renewal shayad fail hua hai",
+                            extra="Kripya dashboard check karein",
+                            expiry_date=current_expiry or "(Nahi mila)"
                         )
                     )
 
         else:
             if countdown_text:
                 friendly = format_countdown(countdown_text)
-                print(f"⏳ 未到续期时间，倒计时: {countdown_text} ({friendly})")
+                print(f"⏳ Renewal ka time nahi aaya, bacha hua time: {countdown_text} ({friendly})")
                 send_telegram_message(
                     format_notification(
-                        "⏳ 未到续期时间",
-                        extra=f"⏱️ 可续期时间: {friendly}后",
-                        expiry_date=current_expiry or "（未获取到）"
+                        "⏳ Abhi Renewal ka time nahi aaya",
+                        extra=f"⏱️ Next Renewal: {friendly} baad",
+                        expiry_date=current_expiry or "(Nahi mila)"
                     )
                 )
             else:
-                print("ℹ️ 未找到续期按钮或倒计时，状态未知")
+                print("ℹ️ Renew button ya cooldown nahi mila, status pata nahi chala")
                 send_telegram_message(
                     format_notification(
-                        "ℹ️ 无需续期",
-                        extra="当前状态未知，请手动检查",
-                        expiry_date=current_expiry or "（未获取到）"
+                        "ℹ️ Status check karein",
+                        extra="Status pata nahi chala, manually check karein",
+                        expiry_date=current_expiry or "(Nahi mila)"
                     )
                 )
 
-        print("🏁 脚本执行完毕")
+        print("🏁 Script ka kaam poora hua")
 
 if __name__ == "__main__":
     main()
