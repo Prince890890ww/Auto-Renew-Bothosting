@@ -19,7 +19,7 @@ if not (EMAIL and PASSWORD):
 # 发送tg通知
 def send_telegram_message(message: str):
     if not TG_BOT_TOKEN or not TG_CHAT_ID:
-        print("⚠️ Telegram 未配置，跳过通知")
+        print("⚠️Telegram 未配置，跳过通知")
         return
     url = f"https://api.telegram.org/bot{TG_BOT_TOKEN}/sendMessage"
     try:
