@@ -2,7 +2,8 @@ name: Auto Renew Bot-hosting
 
 on:
   schedule:
-    - cron: '30 22 * * *'
+    # Ye roz India time ke hisaab se shaam 8:45 baje chalega
+    - cron: '15 15 * * *' 
   workflow_dispatch:
 
 jobs:
